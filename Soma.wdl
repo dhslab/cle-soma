@@ -13,9 +13,6 @@ workflow Soma {
         Boolean DataTransfer
         Boolean RmRunDir
         
-        String CNVNormFile
-        String CoverageBed
-
         String XferLabel
         String OutputDir
         String Queue
@@ -24,8 +21,10 @@ workflow Soma {
         String DragenDockerImage
 
         String SomaRepo
+        String CoverageBed  = SomaRepo + "/accessory_files/SOMA_132GenesHaplotect_v3_Target_01_12_2023_20bp_padding.bed"
+        String CNVNormFile  = SomaRepo + "/accessory_files/H_QT-NA12878-Combined-Tubes-lib1.target.counts.gc-corrected.gz"
         String HaplotectBed = SomaRepo + "/accessory_files/myeloseq.haplotect_snppairs_hg38.041718.bed"
-        String QC_pl = SomaRepo + "/scripts/QC_metrics.pl" 
+        String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
     }
 
     String DragenReference = "/storage1/fs1/gtac-mgi/Active/CLE/reference/dragen_hg38"
