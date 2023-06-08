@@ -22,7 +22,6 @@ workflow Soma {
 
         String SomaRepo
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA_132GenesHaplotect_v3_Target_01_12_2023_20bp_padding.bed"
-        String CNVNormFile  = SomaRepo + "/accessory_files/H_QT-NA12878-Combined-Tubes-lib1.target.counts.gc-corrected.gz"
         String HaplotectBed = SomaRepo + "/accessory_files/myeloseq.haplotect_snppairs_hg38.041718.bed"
         String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
     }
@@ -239,7 +238,6 @@ task dragen_align {
          String queue
 
          String? DragenEnv
-         Int? TrimLen
          Int readfamilysize
      }
 
