@@ -31,12 +31,9 @@ workflow Soma {
     String Reference       = "/storage1/fs1/duncavagee/Active/SEQ/Chromoseq/process/refdata/hg38/all_sequences.fa"
     String ReferenceDict   = "/storage1/fs1/duncavagee/Active/SEQ/Chromoseq/process/refdata/hg38/all_sequences.dict"
 
-    String VEP           = "/storage1/fs1/gtac-mgi/Active/CLE/reference/VEP_cache"
-    String SvNoiseFile   = "/storage1/fs1/gtac-mgi/Active/CLE/reference/dragen_align_inputs/hg38/WGS_v1.0.0_hg38_sv_systematic_noise.bedpe.gz"
     String DemuxFastqDir = "/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/demux_fastq"
 
     Int readfamilysize  = 1
-    Int CNVfilterlength = 100000
 
     if (defined(DemuxSampleSheet)){
         call dragen_demux {
@@ -71,24 +68,12 @@ workflow Soma {
                    SM=samples[6],
                    LB=samples[5] + '.' + samples[0],
                    readfamilysize=readfamilysize,
-                   CNVfilterlength=CNVfilterlength,
-                   CNVNormFile=CNVNormFile,
                    CoverageBed=CoverageBed,
-                   SvNoiseFile=SvNoiseFile,
                    OutputDir=OutputDir,
                    SubDir=samples[1] + '_' + samples[0],
                    DragenEnv=DragenEnv,
                    DragenDockerImage=DragenDockerImage,
                    queue=DragenQueue,
-                   jobGroup=JobGroup
-        }
-
-        call run_vep {
-            input: Vcf=dragen_align.vcf,
-                   refFasta=Reference,
-                   Vepcache=VEP,
-                   Name=samples[1],
-                   queue=Queue,
                    jobGroup=JobGroup
         }
 
@@ -105,8 +90,7 @@ workflow Soma {
 
         call gather_files {
             input: OutputFiles=[run_haplotect.out_file,
-                   run_haplotect.sites_file,
-                   run_vep.vcf],
+                   run_haplotect.sites_file],
                    OutputDir=OutputDir,
                    SubDir=samples[1] + '_' + samples[0],
                    queue=Queue,
@@ -247,10 +231,7 @@ task dragen_align {
          String RG
          String SM
          String LB
-         String CNVfilterlength
-         String CNVNormFile
          String CoverageBed
-         String SvNoiseFile
          String OutputDir
          String SubDir
          String DragenDockerImage
@@ -279,7 +260,7 @@ task dragen_align {
 
          /bin/mkdir ${LocalSampleDir} && \
          /bin/mkdir ${outdir} && \
-         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} --enable-map-align true --enable-sort true --enable-map-align-output true --cnv-target-bed ${CoverageBed} --vc-target-bed ${CoverageBed} --sv-call-regions-bed ${CoverageBed} --vc-enable-umi-solid true --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-enable-triallelic-filter false --enable-sv true --sv-exome true --sv-output-contigs true --sv-systematic-noise ${SvNoiseFile} --enable-cnv true --cnv-enable-ref-calls false --cnv-filter-length ${CNVfilterlength} --cnv-normals-file ${CNVNormFile} --gc-metrics-enable=true --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 full_res --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --enable-variant-caller=true --umi-metrics-interval-file ${CoverageBed} --output-dir ${LocalSampleDir} --output-file-prefix ${Name} --output-format CRAM &> ${log} && \
+         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} --enable-map-align true --enable-sort true --enable-map-align-output true --enable-variant-caller=true --vc-enable-umi-solid true --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-enable-triallelic-filter false --vc-target-bed ${CoverageBed} --gc-metrics-enable=true --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} --output-dir ${LocalSampleDir} --output-file-prefix ${Name} --output-format CRAM &> ${log} && \
          /bin/mv ${log} ./ && \
          /bin/mv ${LocalSampleDir} ${dragen_outdir}
      }
@@ -296,37 +277,6 @@ task dragen_align {
      output {
          File cram = "${dragen_outdir}/${Name}_tumor.cram"
          File crai = "${dragen_outdir}/${Name}_tumor.cram.crai"
-         File vcf = "${dragen_outdir}/${Name}.hard-filtered.vcf.gz"
-         File index = "${dragen_outdir}/${Name}.hard-filtered.vcf.gz.tbi"
-     }
-}
-
-task run_vep {
-     input {
-         File Vcf
-         String refFasta
-         String Vepcache
-         Float? maxAF
-         String Name
-         String jobGroup
-         String queue
-     }
-     command {
-         /usr/local/bin/tabix -p vcf ${Vcf} && \
-         /usr/bin/perl -I /opt/vep/lib/perl/VEP/Plugins /opt/vep/src/ensembl-vep/vep --format vcf \
-         --vcf --plugin Downstream --fasta ${refFasta} --hgvs --symbol --term SO --flag_pick \
-         -i ${Vcf} --offline --cache --max_af --dir ${Vepcache} -o ${Name}.annotated.vcf && \
-         /usr/local/bin/bgzip ${Name}.annotated.vcf && /usr/local/bin/tabix -p vcf ${Name}.annotated.vcf.gz
-     }
-     runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/mgi-cle/vep105-htslib1.9:1)"
-         cpu: "1"
-         memory: "10 G"
-         queue: queue
-         job_group: jobGroup
-     }
-     output {
-         File vcf = "${Name}.annotated.vcf.gz"
      }
 }
 
