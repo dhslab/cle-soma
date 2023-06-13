@@ -21,8 +21,8 @@ workflow Soma {
         String DragenDockerImage
 
         String SomaRepo
-        String CoverageBed  = SomaRepo + "/accessory_files/SOMA_132GenesHaplotect_v3_Target_01_12_2023_20bp_padding.bed"
-        String HaplotectBed = SomaRepo + "/accessory_files/myeloseq.haplotect_snppairs_hg38.041718.bed"
+        String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
+        String HaplotectBed = SomaRepo + "/accessory_files/SOMA.haplotect.bed"
         String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
     }
 
