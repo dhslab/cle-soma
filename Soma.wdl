@@ -22,6 +22,7 @@ workflow Soma {
 
         String SomaRepo
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
+	String CovLevels = "100,500,1000,1500"
         String HaplotectBed = SomaRepo + "/accessory_files/SOMA.haplotect.bed"
         String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
     }
@@ -68,6 +69,7 @@ workflow Soma {
                    LB=samples[5] + '.' + samples[0],
                    readfamilysize=readfamilysize,
                    CoverageBed=CoverageBed,
+		   CovLevels=CovLevels,
                    OutputDir=OutputDir,
                    SubDir=samples[1] + '_' + samples[0],
                    DragenEnv=DragenEnv,
@@ -231,6 +233,7 @@ task dragen_align {
          String SM
          String LB
          String CoverageBed
+	 String CovLevels
          String OutputDir
          String SubDir
          String DragenDockerImage
@@ -258,7 +261,7 @@ task dragen_align {
 
          /bin/mkdir ${LocalSampleDir} && \
          /bin/mkdir ${outdir} && \
-         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} --enable-map-align true --enable-sort true --enable-map-align-output true --enable-variant-caller=true --vc-enable-umi-solid true --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-enable-triallelic-filter false --vc-target-bed ${CoverageBed} --gc-metrics-enable=true --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} --output-dir ${LocalSampleDir} --output-file-prefix ${Name} --output-format CRAM &> ${log} && \
+         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} --enable-map-align true --enable-sort true --enable-map-align-output true --enable-variant-caller=true --vc-enable-umi-solid true --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-enable-triallelic-filter false --vc-target-bed ${CoverageBed} --gc-metrics-enable=true --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report --qc-coverage-region-1-thresholds ${CovLevels} --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} --output-dir ${LocalSampleDir} --output-file-prefix ${Name} --output-format CRAM &> ${log} && \
          /bin/mv ${log} ./ && \
          /bin/mv ${LocalSampleDir} ${dragen_outdir}
      }
