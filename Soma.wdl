@@ -9,10 +9,10 @@ workflow Soma {
         File? DemuxSampleSheet
         String? IlluminaDir
         String? DragenEnv
-        
+
         Boolean DataTransfer
         Boolean RmRunDir
-        
+
         String XferLabel
         String OutputDir
         String Queue
@@ -22,7 +22,7 @@ workflow Soma {
 
         String SomaRepo
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
-	String CovLevels = "100,500,1000,1500"
+        String CovLevels = "100,500,1000,1500"
         String HaplotectBed = SomaRepo + "/accessory_files/SOMA.haplotect.bed"
         String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
     }
@@ -69,7 +69,7 @@ workflow Soma {
                    LB=samples[5] + '.' + samples[0],
                    readfamilysize=readfamilysize,
                    CoverageBed=CoverageBed,
-		   CovLevels=CovLevels,
+                   CovLevels=CovLevels,
                    OutputDir=OutputDir,
                    SubDir=samples[1] + '_' + samples[0],
                    DragenEnv=DragenEnv,
@@ -115,7 +115,7 @@ workflow Soma {
                    queue=DragenQueue,
                    jobGroup=JobGroup
         }
-        
+
         if (DataTransfer) {
             call data_transfer {
                 input: order_by=move_demux_fastq.done,
@@ -233,7 +233,7 @@ task dragen_align {
          String SM
          String LB
          String CoverageBed
-	 String CovLevels
+         String CovLevels
          String OutputDir
          String SubDir
          String DragenDockerImage
@@ -429,9 +429,9 @@ task data_transfer {
          set -eo pipefail && \
          /bin/mkdir xfer_staging && \
          /bin/cp ${QcFile} xfer_staging && \
-         /bin/cp ${BatchFastqDir}/H_*.fastq.gz xfer_staging && \ 
+         /bin/cp ${BatchFastqDir}/H_*.fastq.gz xfer_staging && \
          /usr/local/bin/aws s3 cp xfer_staging s3://genoox-upload-wustl/gtacmgi/${XferLabel} --recursive && \
-         /usr/bin/touch done.txt && \ 
+         /usr/bin/touch done.txt && \
          /usr/local/bin/aws s3 cp done.txt s3://genoox-upload-wustl/gtacmgi/${XferLabel}
      }
      runtime {
