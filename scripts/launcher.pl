@@ -20,7 +20,7 @@ use JSON qw(from_json to_json);
 use IO::File;
 use File::Spec;
 
-die "Provide rundir, excel sample spreadsheet, batch name in order" unless @ARGV == 3;
+die "Provide rundir, excel sample spreadsheet, batch name(transfer label) in order" unless @ARGV == 3;
 
 my ($rundir, $sample_sheet, $batch_name) = @ARGV;
 
@@ -28,12 +28,12 @@ die "$rundir is not valid" unless -d $rundir;
 die "$sample_sheet is not valid" unless -s $sample_sheet;
 
 my $dir = '/storage1/fs1/gtac-mgi/Active/CLE/validation/soma/output';
-my $git_dir = '/home/fdu/git/cle-soma';
+my $git_dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma';
 
 my $conf = File::Spec->join($git_dir, 'application.conf');
 my $wdl  = File::Spec->join($git_dir, 'Soma.wdl');
 #my $json_template = File::Spec->join($git_dir, 'Soma.json');
-my $json_template = File::Spec->join($git_dir, 'Soma_test.json');
+my $json_template = File::Spec->join($git_dir, 'Soma.json');
 
 my $group  = '/cle/wdl/tcp';
 my $queue  = 'gtac-mgi';
@@ -100,54 +100,13 @@ my $si_fh = IO::File->new(">$si") or die "Fail to write to $si";
 $si_fh->print($si_str);
 $si_fh->close;
 
-## Get RunInfoString
-my $run_xml = File::Spec->join($rundir, 'RunParameters.xml');
-unless (-s $run_xml) {
-    die "RunParameters.xml $run_xml is not valid";
-}
-my $xml_fh = IO::File->new($run_xml) or die "Fail to open $run_xml";
-my ($runid, $R1cycle, $R2cycle, $index1cycle, $index2cycle, $fcmode, $wftype, $instr, $side);
-
-while (my $line = $xml_fh->getline) {
-    if ($line =~ /<RunId>(\S+)<\/RunId>/) {
-        $runid = $1;
-    }
-    elsif ($line =~ /<Read1NumberOfCycles>(\d+)<\/Read1NumberOfCycles>/) {
-        $R1cycle = $1;
-    }
-    elsif ($line =~ /<Read2NumberOfCycles>(\d+)<\/Read2NumberOfCycles>/) {
-        $R2cycle = $1;
-    }
-    elsif ($line =~ /<IndexRead1NumberOfCycles>(\d+)<\/IndexRead1NumberOfCycles>/) {
-        $index1cycle = $1;
-    }
-    elsif ($line =~ /<IndexRead2NumberOfCycles>(\d+)<\/IndexRead2NumberOfCycles>/) {
-        $index2cycle = $1;
-    }
-    elsif ($line =~ /<FlowCellMode>(\S+)<\/FlowCellMode>/) {
-        $fcmode = $1;
-    }
-    elsif ($line =~ /<WorkflowType>(\S+)<\/WorkflowType>/) {
-        $wftype = $1;
-    }
-    elsif ($line =~ /<InstrumentName>(\S+)<\/InstrumentName>/) {
-        $instr = $1;
-    }
-    elsif ($line =~ /<Side>(\S+)<\/Side>/) {
-        $side = $1;
-    }
-}
-$xml_fh->close;
-
-my $run_info_str = join ',', $runid, $instr, $side, $fcmode, $wftype, $R1cycle, $index1cycle, $index2cycle, $R2cycle; 
-
 ## Input JSON
 my $inputs = from_json(`cat $json_template`);
 $inputs->{'Soma.OutputDir'}        = $out_dir;
 $inputs->{'Soma.IlluminaDir'}      = $rundir;
 $inputs->{'Soma.SampleSheet'}      = $si;
+$inputs->{'Soma.XferLabel'}        = $batch_name;
 $inputs->{'Soma.DemuxSampleSheet'} = $dragen_ss;
-#$inputs->{'Soma.RunInfoString'}    = $run_info_str;
 
 my $input_json = File::Spec->join($out_dir, 'Soma.json');
 my $json_fh = IO::File->new(">$input_json") or die "fail to write to $input_json";
