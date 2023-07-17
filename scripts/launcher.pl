@@ -27,7 +27,7 @@ my ($rundir, $sample_sheet, $batch_name) = @ARGV;
 die "$rundir is not valid" unless -d $rundir;
 die "$sample_sheet is not valid" unless -s $sample_sheet;
 
-my $dir = '/storage1/fs1/gtac-mgi/Active/CLE/validation/soma/output';
+my $dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/batchdir';
 my $git_dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma';
 
 my $conf = File::Spec->join($git_dir, 'application.conf');
