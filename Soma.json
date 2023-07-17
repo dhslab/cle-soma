@@ -8,7 +8,8 @@
     "Soma.DataTransfer":"true",
     "Soma.RmRunDir":"true",
     "Soma.JobGroup":"/cle/wdl/haloplex",
-    "Soma.DragenDockerImage":"docker1(seqfu/centos7-dragen-4.0.3:latest)",
-    "Soma.DragenQueue":"duncavagee",
+    "Soma.DragenEnv":"LSF_DOCKER_DRAGEN=y",
+    "Soma.DragenDockerImage":"gtac-mgi-dragen(seqfu/oracle8-dragen-4.0.3:latest)",
+    "Soma.DragenQueue":"dragen-2",
     "Soma.Queue":"gtac-mgi"
 }
