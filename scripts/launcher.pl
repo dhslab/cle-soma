@@ -107,6 +107,7 @@ $inputs->{'Soma.IlluminaDir'}      = $rundir;
 $inputs->{'Soma.SampleSheet'}      = $si;
 $inputs->{'Soma.XferLabel'}        = $batch_name;
 $inputs->{'Soma.DemuxSampleSheet'} = $dragen_ss;
+$inputs->{'Soma.InputSpreadSheet'} = $sample_sheet;
 
 my $input_json = File::Spec->join($out_dir, 'Soma.json');
 my $json_fh = IO::File->new(">$input_json") or die "fail to write to $input_json";
