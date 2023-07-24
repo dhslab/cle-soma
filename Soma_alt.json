@@ -1,4 +1,5 @@
 {	
+    "Soma.InputSpreadSheet":"PATH",
     "Soma.DemuxSampleSheet":"PATH",
     "Soma.SampleSheet":"PATH",
     "Soma.OutputDir":"",

@@ -2,6 +2,7 @@ version 1.0
 
 workflow Soma {
     input {
+        File InputSpreadSheet
         File SampleSheet
         # sample sheet has this structure:
         # index  name  RG_ID  RG_FLOWCELL  RG_LANE  RG_LIB  RG_SAMPLE [R1] [R2]
@@ -24,7 +25,7 @@ workflow Soma {
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
         String CovLevels = "100,500,1000,1500"
         String HaplotectBed = SomaRepo + "/accessory_files/SOMA.haplotect.bed"
-        String QC_pl        = SomaRepo + "/scripts/QC_metrics.pl"
+        String QC_py        = SomaRepo + "/scripts/QC_metrics.py"
     }
 
     String DragenReference = "/storage1/fs1/gtac-mgi/Active/CLE/reference/dragen_hg38"
@@ -101,8 +102,9 @@ workflow Soma {
 
     call batch_qc {
         input: order_by=gather_files.done,
+               InputSpreadSheet=InputSpreadSheet,
                BatchDir=OutputDir,
-               QC_pl=QC_pl,
+               QC_py=QC_py,
                queue=Queue,
                jobGroup=JobGroup
     }
@@ -343,27 +345,29 @@ task gather_files {
 task batch_qc {
      input {
          Array[String] order_by
+         String InputSpreadSheet
          String BatchDir
-         String QC_pl
+         String QC_py
          String queue
          String jobGroup
      }
+     String batch = basename(BatchDir)
 
      command {
          if [ -n "$(/bin/ls -d ${BatchDir}/H_*)" ]; then
              /bin/chmod -R 777 ${BatchDir}/H_*
          fi
 
-         /usr/bin/perl ${QC_pl} ${BatchDir}
+         /usr/bin/python3 ${QC_py} ${InputSpreadSheet} ${BatchDir}
      }
      runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/mgi-cle/myeloseqhd:v2)"
+         docker_image: "docker1(catgumag/pandas-scibioxl:20220107)"
          memory: "4 G"
          queue: queue
          job_group: jobGroup
      }
      output {
-         File QC_file = "${BatchDir}/QC_metrics.tsv"
+         File QC_file = "${BatchDir}/${batch}_Genoox.xlsx"
      }
 }
 
