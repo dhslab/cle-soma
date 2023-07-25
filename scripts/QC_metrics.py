@@ -17,7 +17,7 @@ batch_name = os.path.basename(out_dir)
 if not os.path.isdir(out_dir):
     sys.exit("Workflow output dir does not exist: " + out_dir)
 
-in_df = pd.read_excel(in_ss, sheet_name='QC Stats')
+in_df = pd.read_excel(in_ss, sheet_name='QC Metrics')
 lib_list = in_df['SAMPLE ID'].tolist()
 
 hap_scores      = []
