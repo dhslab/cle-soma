@@ -19,10 +19,12 @@ use Spreadsheet::Read;
 use JSON qw(from_json to_json);
 use IO::File;
 use File::Spec;
+use Cwd 'abs_path';
 
 die "Provide rundir, excel sample spreadsheet, batch name(transfer label) in order" unless @ARGV == 3;
 
 my ($rundir, $sample_sheet, $batch_name) = @ARGV;
+$sample_sheet = abs_path($sample_sheet);
 
 die "$rundir is not valid" unless -d $rundir;
 die "$sample_sheet is not valid" unless -s $sample_sheet;
