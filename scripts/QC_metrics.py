@@ -56,7 +56,10 @@ for lib_name in lib_list:
         lines = haplotect_file.readlines()
         last_line = lines[-1]
         cols = last_line.split()
-        hap_scores.append(float(cols[6]))
+        hapscore = cols[6]
+        if hapscore == 'NaN':
+            hapscore = 0
+        hap_scores.append(float(hapscore))
         hap_sites.append(int(cols[2]))
 
     with open(mapping_metrics, "r") as map_file:
