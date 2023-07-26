@@ -36,6 +36,7 @@ pct_align_reads = []
 pct_target_20   = []
 pct_target_100  = []
 pct_target_1500 = []
+total_giga_bases= []
 
 for lib_name in lib_list:
     search = os.path.join(out_dir, f"{lib_name}*")
@@ -73,6 +74,7 @@ for lib_name in lib_list:
                 pct_map_reads.append(float(line[4]))
             elif "Total bases" in line:
                 total_bases.append(int(line[3]))
+                total_giga_bases.append(float(round(int(line[3])/1000000000, 2)))
             elif "Mismatched bases R1" in line:
                 error_rate_1.append(float(line[4]))
             elif "Mismatched bases R2" in line:
@@ -113,7 +115,7 @@ for lib_name in lib_list:
 qc_df = pd.DataFrame({
     "HAPLOTECT_SCORE"           : hap_scores, 
     "HAPLOTECT_SITES"           : hap_sites,
-    "TOTAL_BASES"               : total_bases,
+    "TOTAL_GIGA_BASES"          : total_giga_bases,
     "TOTAL_READS"               : total_reads,
     "PCT_MAPPED_READS"          : pct_map_reads,
     "MISMATCH_RATE_1"           : error_rate_1,
