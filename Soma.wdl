@@ -400,7 +400,7 @@ task data_transfer {
          set -eo pipefail && \
          /bin/mkdir xfer_staging && \
          if [ -n "${InputSpreadSheet}" ]; then
-             /bin/cp ${QcFile} xfer_staging && \
+             /bin/cp ${QcFile} xfer_staging
          fi
          /bin/cp ${BatchFastqDir}/H_*.fastq.gz xfer_staging && \
          /usr/local/bin/aws s3 cp xfer_staging s3://genoox-upload-wustl/gtacmgi/${XferLabel} --recursive && \
