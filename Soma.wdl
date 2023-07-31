@@ -2,19 +2,19 @@ version 1.0
 
 workflow Soma {
     input {
-        File InputSpreadSheet
         File SampleSheet
         # sample sheet has this structure:
         # index  name  RG_ID  RG_FLOWCELL  RG_LANE  RG_LIB  RG_SAMPLE [R1] [R2]
 
+        File? InputSpreadSheet
         File? DemuxSampleSheet
         String? IlluminaDir
+        String? XferLabel
         String? DragenEnv
 
         Boolean DataTransfer
         Boolean RmRunDir
 
-        String XferLabel
         String OutputDir
         String Queue
         String JobGroup
@@ -23,9 +23,10 @@ workflow Soma {
 
         String SomaRepo
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
-        String CovLevels = "100,500,1000,1500"
         String HaplotectBed = SomaRepo + "/accessory_files/SOMA.haplotect.bed"
         String QC_py        = SomaRepo + "/scripts/QC_metrics.py"
+
+        String CovLevels = "100,500,1000,1500"
     }
 
     String DragenReference = "/storage1/fs1/gtac-mgi/Active/CLE/reference/dragen_hg38"
@@ -40,6 +41,7 @@ workflow Soma {
         call dragen_demux {
             input: Dir=IlluminaDir,
                    OutputDir=OutputDir,
+                   DemuxFastqDir=DemuxFastqDir,
                    SampleSheet=DemuxSampleSheet,
                    DragenEnv=DragenEnv,
                    DragenDockerImage=DragenDockerImage,
@@ -110,20 +112,14 @@ workflow Soma {
     }
 
     if (defined(DemuxSampleSheet)){
-        call move_demux_fastq {
-            input: order_by=gather_files.done,
-                   Batch=basename(OutputDir),
-                   DemuxFastqDir=DemuxFastqDir,
-                   queue=DragenQueue,
-                   jobGroup=JobGroup
-        }
-
         if (DataTransfer) {
             call data_transfer {
-                input: order_by=move_demux_fastq.done,
+                input: QcAll=batch_qc.QC_all,
+                #QcFile= OutputDir + '/' + basename(OutputDir) + '_Genoox.xlsx',
                 QcFile=batch_qc.QC_file,
-                XferLabel=XferLabel,
                 BatchFastqDir= DemuxFastqDir + '/' + basename(OutputDir),
+                InputSpreadSheet=InputSpreadSheet,
+                XferLabel=XferLabel,
                 queue=Queue,
                 jobGroup=JobGroup
             }
@@ -131,7 +127,7 @@ workflow Soma {
 
         if (RmRunDir) {
             call remove_rundir {
-                input: order_by=move_demux_fastq.done,
+                input: order_by=gather_files.done,
                        rundir=IlluminaDir,
                        queue=DragenQueue,
                        jobGroup=JobGroup
@@ -144,30 +140,27 @@ workflow Soma {
 task dragen_demux {
      input {
          String? Dir
-         String OutputDir
-         File? SampleSheet
          String? DragenEnv
+         File? SampleSheet
+         String OutputDir
+         String DemuxFastqDir
          String DragenDockerImage
          String jobGroup
          String queue
      }
 
-     String batch = basename(OutputDir)
-     String StagingDir = "/staging/runs/Soma/"
-     String LocalFastqDir = StagingDir + "demux_fastq/" + batch
-     String LocalReportDir = LocalFastqDir + "/Reports"
-     String LocalSampleSheet = StagingDir + "sample_sheet/" + batch + '.csv'
-     String log = StagingDir + "log/" + batch + "_demux.log"
-     String DemuxReportDir = OutputDir + "/dragen_demux_reports"
+     String LocalFastqDir   = "/staging/runs/Soma/demux_fastq/" + basename(OutputDir)
+     String OutputFastqDir  = DemuxFastqDir + "/" + basename(OutputDir)
+     String OutputReportDir = OutputFastqDir + "/Reports"
+     String DemuxReportDir  = OutputDir + "/dragen_demux_reports"
 
      command <<<
-         /bin/cp ~{SampleSheet} ~{LocalSampleSheet} && \
-         /opt/edico/bin/dragen --bcl-conversion-only true --bcl-only-matched-reads true --strict-mode true --sample-sheet ~{LocalSampleSheet} --bcl-input-directory ~{Dir} --output-directory ~{LocalFastqDir} &> ~{log} && \
-         /bin/ls ~{LocalFastqDir}/*_R1_001.fastq.gz > Read1_list.txt && \
-         /bin/ls ~{LocalFastqDir}/*_R2_001.fastq.gz > Read2_list.txt && \
-         /bin/mv ~{log} ./ && \
-         /bin/rm -f ~{LocalSampleSheet} && \
-         /bin/cp -r ~{LocalReportDir} ~{DemuxReportDir}
+         /bin/mkdir ~{LocalFastqDir} && \
+         /opt/edico/bin/dragen --bcl-conversion-only true --bcl-only-matched-reads true --strict-mode true --sample-sheet ~{SampleSheet} \
+         --bcl-input-directory ~{Dir} --intermediate-results-dir ~{LocalFastqDir} --output-directory ~{OutputFastqDir} && \
+         /bin/ls ~{OutputFastqDir}/*_R1_001.fastq.gz > Read1_list.txt && \
+         /bin/ls ~{OutputFastqDir}/*_R2_001.fastq.gz > Read2_list.txt && \
+         /bin/cp -r ~{OutputReportDir} ~{DemuxReportDir}
      >>>
 
      runtime {
@@ -247,25 +240,20 @@ task dragen_align {
      }
 
      String batch = basename(OutputDir)
-     String StagingDir = "/staging/runs/Soma/"
-     String LocalAlignDir = StagingDir + "align/" + batch
-     String LocalSampleDir = LocalAlignDir + "/" + SubDir
-     String log = StagingDir + "log/" + Name + "_align.log"
-
-     String outdir = OutputDir + "/" + SubDir
-     String dragen_outdir = outdir + "/dragen"
-
+     String LocalAlignDir = "/staging/runs/Soma/align/" + batch + "/" + SubDir
+     String DragenOutdir = OutputDir + "/" + SubDir + "/dragen"
 
      command {
-         if [ ! -d "${LocalAlignDir}" ]; then
-             /bin/mkdir ${LocalAlignDir}
-         fi
-
-         /bin/mkdir ${LocalSampleDir} && \
-         /bin/mkdir ${outdir} && \
-         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} --enable-map-align true --enable-sort true --enable-map-align-output true --enable-variant-caller=true --vc-enable-umi-solid true --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-enable-triallelic-filter false --vc-target-bed ${CoverageBed} --gc-metrics-enable=true --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report --qc-coverage-region-1-thresholds ${CovLevels} --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} --output-dir ${LocalSampleDir} --output-file-prefix ${Name} --output-format CRAM &> ${log} && \
-         /bin/mv ${log} ./ && \
-         /bin/mv ${LocalSampleDir} ${dragen_outdir}
+         /bin/mkdir -p ${LocalAlignDir} && \
+         /bin/mkdir -p ${DragenOutdir}  && \
+         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} \
+         --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} \
+         --enable-map-align true --enable-sort true --enable-map-align-output true --gc-metrics-enable=true \
+         --enable-variant-caller=true --vc-target-bed ${CoverageBed} --vc-enable-umi-solid true --vc-enable-triallelic-filter false \
+         --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true \
+         --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report \
+         --qc-coverage-region-1-thresholds ${CovLevels} \
+         --intermediate-results-dir ${LocalAlignDir} --output-dir ${DragenOutdir} --output-file-prefix ${Name} --output-format BAM
      }
 
      runtime {
@@ -278,8 +266,8 @@ task dragen_align {
      }
 
      output {
-         File cram = "${dragen_outdir}/${Name}_tumor.cram"
-         File crai = "${dragen_outdir}/${Name}_tumor.cram.crai"
+         File cram = "${DragenOutdir}/${Name}_tumor.cram"
+         File crai = "${DragenOutdir}/${Name}_tumor.cram.crai"
      }
 }
 
@@ -345,20 +333,23 @@ task gather_files {
 task batch_qc {
      input {
          Array[String] order_by
-         String InputSpreadSheet
          String BatchDir
          String QC_py
          String queue
          String jobGroup
+         String? InputSpreadSheet
      }
      String batch = basename(BatchDir)
 
      command {
          if [ -n "$(/bin/ls -d ${BatchDir}/H_*)" ]; then
-             /bin/chmod -R 777 ${BatchDir}/H_*
+             /bin/chmod -R 666 ${BatchDir}/H_*
          fi
-
-         /usr/bin/python3 ${QC_py} ${InputSpreadSheet} ${BatchDir}
+         if [ -n "${InputSpreadSheet}" ]; then
+             /usr/bin/python3 ${QC_py} -s ${InputSpreadSheet} -d ${BatchDir}
+         else
+             /usr/bin/python3 ${QC_py} -d ${BatchDir}
+         fi
      }
      runtime {
          docker_image: "docker1(catgumag/pandas-scibioxl:20220107)"
@@ -367,39 +358,14 @@ task batch_qc {
          job_group: jobGroup
      }
      output {
-         File QC_file = "${BatchDir}/${batch}_Genoox.xlsx"
-     }
-}
-
-task move_demux_fastq {
-     input {
-         Array[String] order_by
-         String Batch
-         String DemuxFastqDir
-         String queue
-         String jobGroup
-     }
-
-     String LocalDemuxFastqDir = "/staging/runs/Soma/demux_fastq/" + Batch
-
-     command {
-         if [ -d "${LocalDemuxFastqDir}" ]; then
-             /bin/mv ${LocalDemuxFastqDir} ${DemuxFastqDir}
-         fi
-     }
-     runtime {
-         docker_image: "docker1(ubuntu:xenial)"
-         queue: queue
-         job_group: jobGroup
-     }
-     output {
-         String done = stdout()
+         File  QC_all  = "${BatchDir}/${batch}_QC.xlsx"
+         File? QC_file = "${BatchDir}/${batch}_Genoox.xlsx"
      }
 }
 
 task remove_rundir {
      input {
-         String order_by
+         Array[String] order_by
          String? rundir
          String queue
          String jobGroup
@@ -421,9 +387,10 @@ task remove_rundir {
 
 task data_transfer {
      input {
-         String order_by
-         String QcFile
-         String XferLabel
+         String? InputSpreadSheet
+         String? XferLabel
+         String? QcFile
+         String QcAll
          String BatchFastqDir
          String queue
          String jobGroup
@@ -432,7 +399,9 @@ task data_transfer {
      command {
          set -eo pipefail && \
          /bin/mkdir xfer_staging && \
-         /bin/cp ${QcFile} xfer_staging && \
+         if [ -n "${InputSpreadSheet}" ]; then
+             /bin/cp ${QcFile} xfer_staging && \
+         fi
          /bin/cp ${BatchFastqDir}/H_*.fastq.gz xfer_staging && \
          /usr/local/bin/aws s3 cp xfer_staging s3://genoox-upload-wustl/gtacmgi/${XferLabel} --recursive && \
          /usr/bin/touch done.txt && \

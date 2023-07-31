@@ -1,24 +1,46 @@
 #!/usr/bin/env python
 
 import os
+import re
 import csv
 import sys
 import glob
+import argparse
 import pandas as pd
 
-if len(sys.argv) != 3:
-    print("Provide sample_spreadsheet and workflow_output_dir in order")
-    sys.exit(1)
+def get_lib_list(directory):
+    prefixes = ["H_", "TW"]
+    dir_names = [x for x in os.listdir(directory) if os.path.isdir(os.path.join(directory, x)) and
+                 x.startswith(tuple(prefixes)) and 'lib' in x]
+    liblist = []
+    pattern = r'(^(H_|TW)\S+-lib\d+)_[ATCG]'
+    for dir_name in dir_names:
+        match = re.match(pattern, dir_name)
+        if match:
+            liblist.append(match.group(1))
+        else:
+            sys.exit('Fail to extract library name from ' + dir_name)
+    return liblist
 
-in_ss      = sys.argv[1]
-out_dir    = os.path.abspath(sys.argv[2])
+parser = argparse.ArgumentParser(description='Make QC Excel Spreadsheet')
+parser.add_argument('-d','--batchdir',required=True,help='workflow batch output dir')
+parser.add_argument('-s','--samplesheet',required=False,help='input sample spreadsheet with 2 tabs')
+
+args = parser.parse_args()
+
+in_ss      = args.samplesheet
+out_dir    = os.path.abspath(args.batchdir)
 batch_name = os.path.basename(out_dir)
 
 if not os.path.isdir(out_dir):
     sys.exit("Workflow output dir does not exist: " + out_dir)
 
-in_df = pd.read_excel(in_ss, sheet_name='QC Metrics')
-lib_list = in_df['SAMPLE ID'].tolist()
+if in_ss:
+    in_df = pd.read_excel(in_ss, sheet_name='QC Metrics')
+    lib_list = in_df['SAMPLE ID'].tolist()
+else:
+    lib_list = get_lib_list(out_dir)
+    in_df = pd.DataFrame({'Samples' : lib_list})
 
 hap_scores      = []
 hap_sites       = []
@@ -131,31 +153,31 @@ qc_df = pd.DataFrame({
     "PCT_TARGET_1500x"          : pct_target_1500
 })
 
+out_file1 = os.path.join(out_dir, batch_name + "_QC.xlsx")
 all_df = pd.concat([in_df, qc_df], axis=1)
+all_df.to_excel(out_file1, sheet_name='All QC', index=False)
 
-sss_df = pd.DataFrame({
-    'Library'          : lib_list, 
-    'Total Bases'      : total_bases,
-    'Percent Q30 (R1)' : pct_q30_1,
-    'Percent Q30 (R2)' : pct_q30_2
-})
+if in_ss:
+    sss_df = pd.DataFrame({
+        'Library'          : lib_list,
+        'Total Bases'      : total_bases,
+        'Percent Q30 (R1)' : pct_q30_1,
+        'Percent Q30 (R2)' : pct_q30_2
+    })
 
-sample_list   = [x.split('-lib')[0] for x in lib_list]
-hap_scores_pct = ['{:.2f}%'.format(x * 100) for x in hap_scores]
+    sample_list = [x.split('-lib')[0] for x in lib_list]
+    hap_scores_pct = ['{:.2f}%'.format(x * 100) for x in hap_scores]
 
-fcs_df = pd.DataFrame({
-    'Sample'                : sample_list, 
-    'contaminationestimate' : hap_scores_pct
-})
+    fcs_df = pd.DataFrame({
+        'Sample'                : sample_list,
+        'contaminationestimate' : hap_scores_pct
+    })
 
-out_file1 = os.path.join(out_dir, batch_name + "_Genoox.xlsx")
-#writer    = pd.ExcelWriter(out_file1, engine='xlsxwriter')
-writer    = pd.ExcelWriter(out_file1)
+    out_file2 = os.path.join(out_dir, batch_name + "_Genoox.xlsx")
+    writer    = pd.ExcelWriter(out_file2)
+    #writer = pd.ExcelWriter(out_file1, engine='xlsxwriter')
 
-in_df.to_excel (writer, sheet_name='QC Metrics - qPCR', index=False)
-sss_df.to_excel(writer, sheet_name='Single Sample Stats', index=False, float_format="%.2f")
-fcs_df.to_excel(writer, sheet_name='Final Coverage Stats - TCP', index=False, float_format="%.2f")
-writer.save()
-
-out_file2 = os.path.join(out_dir, batch_name + "_QC.xlsx")
-all_df.to_excel(out_file2, sheet_name='All QC', index=False)
+    in_df.to_excel (writer, sheet_name='QC Metrics - qPCR', index=False)
+    sss_df.to_excel(writer, sheet_name='Single Sample Stats', index=False, float_format="%.2f")
+    fcs_df.to_excel(writer, sheet_name='Final Coverage Stats - TCP', index=False, float_format="%.2f")
+    writer.save()
