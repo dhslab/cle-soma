@@ -253,7 +253,7 @@ task dragen_align {
          --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true \
          --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report \
          --qc-coverage-region-1-thresholds ${CovLevels} \
-         --intermediate-results-dir ${LocalAlignDir} --output-dir ${DragenOutdir} --output-file-prefix ${Name} --output-format BAM
+         --intermediate-results-dir ${LocalAlignDir} --output-dir ${DragenOutdir} --output-file-prefix ${Name} --output-format CRAM
      }
 
      runtime {
