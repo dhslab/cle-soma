@@ -7,7 +7,7 @@
     "Soma.XferLabel":"",
     "Soma.SomaRepo":"/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma",
     "Soma.DataTransfer":"true",
-    "Soma.RmRunDir":"true",
+    "Soma.RmRunDir":"false",
     "Soma.JobGroup":"/cle/wdl/haloplex",
     "Soma.DragenEnv":"LSF_DOCKER_DRAGEN=y",
     "Soma.DragenDockerImage":"gtac-mgi-dragen(seqfu/oracle8-dragen-4.0.3:latest)",

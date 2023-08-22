@@ -111,20 +111,20 @@ workflow Soma {
                jobGroup=JobGroup
     }
 
-    if (defined(DemuxSampleSheet)){
-        if (DataTransfer) {
-            call data_transfer {
-                input: QcAll=batch_qc.QC_all,
-                #QcFile= OutputDir + '/' + basename(OutputDir) + '_Genoox.xlsx',
-                QcFile=batch_qc.QC_file,
-                BatchFastqDir= DemuxFastqDir + '/' + basename(OutputDir),
-                InputSpreadSheet=InputSpreadSheet,
-                XferLabel=XferLabel,
-                queue=Queue,
-                jobGroup=JobGroup
-            }
+    if (DataTransfer) {
+        call data_transfer {
+            input: QcAll=batch_qc.QC_all,
+            #QcFile= OutputDir + '/' + basename(OutputDir) + '_Genoox.xlsx',
+            QcFile=batch_qc.QC_file,
+            BatchFastqDir= DemuxFastqDir + '/' + basename(OutputDir),
+            InputSpreadSheet=InputSpreadSheet,
+            XferLabel=XferLabel,
+            queue=Queue,
+            jobGroup=JobGroup
         }
+    }
 
+    if (defined(DemuxSampleSheet)){
         if (RmRunDir) {
             call remove_rundir {
                 input: order_by=gather_files.done,
