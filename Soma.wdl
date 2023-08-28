@@ -206,7 +206,7 @@ task prepare_samples {
      >>>
 
      runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/genome/lims-compute-xenial:1)"
+         docker_image: "docker1(ubuntu:xenial)"
          cpu: "1"
          memory: "4 G"
          queue: queue
@@ -294,7 +294,7 @@ task run_haplotect {
      >>>
 
      runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/mgi-cle/haplotect:0.3)"
+         docker_image: "docker1(abelhj/haplotect:0.3)"
          cpu: "1"
          memory: "8 G"
          queue: queue
@@ -321,7 +321,7 @@ task gather_files {
          /bin/mv -f -t ${OutputDir}/${SubDir} ${sep=" " OutputFiles}
      }
      runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/genome/lims-compute-xenial:1)"
+         docker_image: "docker1(ubuntu:xenial)"
          queue: queue
          job_group: jobGroup
      }
@@ -408,7 +408,7 @@ task data_transfer {
          /usr/local/bin/aws s3 cp done.txt s3://genoox-upload-wustl/gtacmgi/${XferLabel}
      }
      runtime {
-         docker_image: "docker1(registry.gsc.wustl.edu/dataxfer/data-transfer-aws)"
+         docker_image: "docker1(mgibio/data-transfer-aws:v1)"
          memory: "8 G"
          queue: queue
          job_group: jobGroup

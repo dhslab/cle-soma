@@ -39,7 +39,7 @@ my $json_template = File::Spec->join($git_dir, 'Soma.json');
 
 my $group  = '/cle/wdl/tcp';
 my $queue  = 'gtac-mgi';
-my $docker = 'registry.gsc.wustl.edu/apipe-builder/genome_perl_environment:compute1-38';
+my $docker = 'mgibio/genome_perl_environment:compute1-38';
 
 my $user_group = 'compute-gtac-mgi';
 
