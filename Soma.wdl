@@ -342,8 +342,8 @@ task batch_qc {
      String batch = basename(BatchDir)
 
      command {
-         if [ -n "$(/bin/ls -d ${BatchDir}/H_*)" ]; then
-             /bin/chmod -R 666 ${BatchDir}/H_*
+         if [ -n "$(/bin/ls -d ${BatchDir}/G*)" ]; then
+             /bin/chmod -R 666 ${BatchDir}/G*
          fi
          if [ -n "${InputSpreadSheet}" ]; then
              /usr/bin/python3 ${QC_py} -s ${InputSpreadSheet} -d ${BatchDir}
@@ -402,8 +402,8 @@ task data_transfer {
          if [ -n "${InputSpreadSheet}" ]; then
              /bin/cp ${QcFile} xfer_staging
          fi
-         /bin/cp ${BatchFastqDir}/H_*.fastq.gz xfer_staging && \
-         /usr/local/bin/aws s3 cp xfer_staging s3://genoox-upload-wustl/gtacmgi/${XferLabel} --recursive && \
+         /bin/cp ${BatchFastqDir}/*.fastq.gz xfer_staging && \
+         /usr/local/bin/aws s3 cp xfer_staging s3://genoox-upload-wustl/gtacmgi/${XferLabel} --exclude "Undetermined*" --recursive && \
          /usr/bin/touch done.txt && \
          /usr/local/bin/aws s3 cp done.txt s3://genoox-upload-wustl/gtacmgi/${XferLabel}
      }

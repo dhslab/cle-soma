@@ -65,19 +65,20 @@ for my $row ($sheet->rows()) {
     unless ($row->[0] =~ /\d+/) {
         die "Lane number is expected, Check sample sheet spreadsheet";
     }
-    my ($lane, $flowcell, $lib, $index, $exception) = @$row;
+    my ($lane, $flowcell, $name, $index, $exception) = @$row;
 
-    $lib =~ s/\s+//g;
-    my ($name) = $lib =~ /^(\S+)\-lib/;
+    $name =~ s/\s+//g;
+    my $lib = $name;
+    $lib .= '-lib1' unless $lib =~ /lib/;
 
     my ($index1, $index2) = $index =~ /([ATGC]{10})\-([ATGC]{10})/;
     my $fix_index2 = rev_comp($index2);
     
     $exception = 'NONE' unless $exception;
     
-    $ds_str .= join ',', $lane, $lib, $lib, '', $index1, $fix_index2;
+    $ds_str .= join ',', $lane, $name, $name, '', $index1, $fix_index2;
     $ds_str .= "\n";
-    $si_str .= join "\t", $index1.'-'.$fix_index2, $lib, $seq_id, $flowcell, $lane, $lib, $name;
+    $si_str .= join "\t", $index1.'-'.$fix_index2, $name, $seq_id, $flowcell, $lane, $lib, $name;
     $si_str .= "\n";
 
     $seq_id++;
