@@ -8,19 +8,15 @@ import glob
 import argparse
 import pandas as pd
 
-def get_lib_list(directory):
-    prefixes = ["H_", "TW"]
-    dir_names = [x for x in os.listdir(directory) if os.path.isdir(os.path.join(directory, x)) and
-                 x.startswith(tuple(prefixes)) and 'lib' in x]
-    liblist = []
-    pattern = r'(^(H_|TW)\S+-lib\d+)_[ATCG]'
+def get_sample_list(directory):
+    dir_names = [x for x in os.listdir(directory) if os.path.isdir(os.path.join(directory, x))]
+    sample_names = []
+    pattern = r'(^\S+)_[ATCG]{10}'
     for dir_name in dir_names:
         match = re.match(pattern, dir_name)
         if match:
-            liblist.append(match.group(1))
-        else:
-            sys.exit('Fail to extract library name from ' + dir_name)
-    return liblist
+            sample_names.append(match.group(1))
+    return sample_names
 
 parser = argparse.ArgumentParser(description='Make QC Excel Spreadsheet')
 parser.add_argument('-d','--batchdir',required=True,help='workflow batch output dir')
@@ -37,10 +33,10 @@ if not os.path.isdir(out_dir):
 
 if in_ss:
     in_df = pd.read_excel(in_ss, sheet_name='QC Metrics')
-    lib_list = in_df['SAMPLE ID'].tolist()
+    sample_list = in_df['SAMPLE ID'].tolist()
 else:
-    lib_list = get_lib_list(out_dir)
-    in_df = pd.DataFrame({'Samples' : lib_list})
+    sample_list = get_sample_list(out_dir)
+    in_df = pd.DataFrame({'Samples' : sample_list})
 
 hap_scores      = []
 hap_sites       = []
@@ -60,8 +56,8 @@ pct_target_100  = []
 pct_target_1500 = []
 total_giga_bases= []
 
-for lib_name in lib_list:
-    search = os.path.join(out_dir, f"{lib_name}*")
+for sample_name in sample_list:
+    search = os.path.join(out_dir, f"{sample_name}*")
     sample_dir = glob.glob(search)[0]
     if not os.path.isdir(sample_dir):
         sys.exit(sample_dir + " is not a valid sample directory")
@@ -70,7 +66,7 @@ for lib_name in lib_list:
     mapping_metrics = glob.glob(os.path.join(dragen_dir, "*.mapping_metrics.csv"))[0]
     target_metrics = glob.glob(os.path.join(dragen_dir, "*.target_bed_coverage_metrics.csv"))[0]
     umi_metrics = glob.glob(os.path.join(dragen_dir, "*.umi_metrics.csv"))[0]
-    haplotect_out = os.path.join(sample_dir, f"{lib_name}.haplotect.txt")
+    haplotect_out = os.path.join(sample_dir, f"{sample_name}.haplotect.txt")
 
     if not (os.path.isfile(mapping_metrics) and os.path.isfile(target_metrics) and os.path.isfile(umi_metrics) and os.path.isfile(haplotect_out)):
         sys.exit(f"No dragen mapping and/or target metrics and/or umi metrics and/or haplotect out for {sample_dir}")
@@ -159,13 +155,12 @@ all_df.to_excel(out_file1, sheet_name='All QC', index=False)
 
 if in_ss:
     sss_df = pd.DataFrame({
-        'Library'          : lib_list,
+        'Library'          : sample_list,
         'Total Bases'      : total_bases,
         'Percent Q30 (R1)' : pct_q30_1,
         'Percent Q30 (R2)' : pct_q30_2
     })
 
-    sample_list = [x.split('-lib')[0] for x in lib_list]
     hap_scores_pct = ['{:.2f}%'.format(x * 100) for x in hap_scores]
 
     fcs_df = pd.DataFrame({
