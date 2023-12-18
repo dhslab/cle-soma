@@ -72,13 +72,12 @@ for my $row ($sheet->rows()) {
     $lib .= '-lib1' unless $lib =~ /lib/;
 
     my ($index1, $index2) = $index =~ /([ATGC]{10})\-([ATGC]{10})/;
-    my $fix_index2 = rev_comp($index2);
     
     $exception = 'NONE' unless $exception;
     
-    $ds_str .= join ',', $lane, $name, $name, '', $index1, $fix_index2;
+    $ds_str .= join ',', $lane, $name, $name, '', $index1, $index2;
     $ds_str .= "\n";
-    $si_str .= join "\t", $index1.'-'.$fix_index2, $name, $seq_id, $flowcell, $lane, $lib, $name;
+    $si_str .= join "\t", $index1.'-'.$index2, $name, $seq_id, $flowcell, $lane, $lib, $name;
     $si_str .= "\n";
 
     $seq_id++;
@@ -125,11 +124,3 @@ my $cmd = "bsub -g $group -G $user_group -oo $out_log -eo $err_log -q $queue -a 
 
 system $cmd;
 #print $cmd."\n";
-
-sub rev_comp {
-    my $index = shift;
-    my $revcomp = reverse $index;
-    $revcomp =~ tr/ATGCatgc/TACGtacg/;
-
-    return $revcomp;
-}
