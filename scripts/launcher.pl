@@ -34,7 +34,6 @@ my $git_dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma
 
 my $conf = File::Spec->join($git_dir, 'application.conf');
 my $wdl  = File::Spec->join($git_dir, 'Soma.wdl');
-#my $json_template = File::Spec->join($git_dir, 'Soma.json');
 my $json_template = File::Spec->join($git_dir, 'Soma.json');
 
 my $group  = '/cle/wdl/tcp';
@@ -52,22 +51,73 @@ unless (-d $out_dir) {
 
 #parse sample spreadsheet
 my $data = Spreadsheet::Read->new($sample_sheet);
-my $sheet = $data->sheet(1);
+
+#error-checking
+my $qc = 'QC Metrics';
+my $sheet = $data->sheet($qc);
+die "$qc is not a valid sheet in $sample_sheet" unless $sheet;
+
+my $flag = 0;
+my %qc_samples;
+for my $row ($sheet->rows()) {
+    if ($row->[0] =~ /\sNUMBER/) {
+        unless ($row->[0] =~ /^ACCESSION\sNUMBER/ and $row->[2] =~ /^SAMPLE\sID/) {
+            die "No ACCESSION NUMBER and or SAMPLE ID as the first and third column header for $qc sheet";
+        }
+        $flag = 1;
+    }
+    else {
+        my $acc = $row->[0];
+        $acc =~ s/\s+//g;
+        die "$acc not starting with G" unless $acc =~ /^G/;
+        unless ($acc =~ /^G\-/) {
+            unless ($acc =~ /^G\d+\-\d+$/) {
+                die "$acc is not a valid accession number in $qc sheet";
+            }
+        }
+        my $sample = $row->[2];
+        $sample =~ s/\s+//g;
+        if ($qc_samples{$sample}) {
+            die "There are multiple $sample in $qc sheet";
+        }
+        else {
+            $qc_samples{$sample} = 1;
+        }
+    }
+}
+die "There is no row for valid column headers in $qc sheet" unless $flag;
+
+my $ss = 'Samplesheet';
+$sheet = $data->sheet($ss);
+die "$ss is not a valid sheet in $sample_sheet" unless $sheet;
 
 my $ds_str;
 my $si_str;
 my $seq_id = 2900000000;
 
 my @cases_excluded;
-
+my %samples;
 for my $row ($sheet->rows()) {
     next if $row->[0] =~ /Run|Lane/i;
     unless ($row->[0] =~ /\d+/) {
-        die "Lane number is expected, Check sample sheet spreadsheet";
+        die "Lane number is expected, Check $ss sheet";
     }
     my ($lane, $flowcell, $name, $index, $exception) = @$row;
 
     $name =~ s/\s+//g;
+    if ($samples{$name}) {
+        die "There are multiple $name in $ss sheet";
+    }
+    else {
+        if ($qc_samples{$name}) {
+            delete $qc_samples{$name};
+        }
+        else {
+            die "$name in $ss sheet does not exist in $qc sheet";
+        }
+        $samples{$name} = 1;
+    }
+
     my $lib = $name;
     $lib .= '-lib1' unless $lib =~ /lib/;
 
@@ -81,6 +131,10 @@ for my $row ($sheet->rows()) {
     $si_str .= "\n";
 
     $seq_id++;
+}
+if (%qc_samples) {
+    my $sample_str = join ",", sort keys %qc_samples;
+    die "$sample_str in $qc sheet but not in $ss sheet";
 }
 
 ## DRAGEN sample sheet
