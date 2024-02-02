@@ -8,6 +8,7 @@ workflow Soma {
 
         File? InputSpreadSheet
         File? DemuxSampleSheet
+        String? PreviousFastqDir
         String? IlluminaDir
         String? XferLabel
         String? DragenEnv
@@ -51,6 +52,7 @@ workflow Soma {
 
         call prepare_samples {
             input: SampleSheet=SampleSheet,
+                   PreviousFastqDir=PreviousFastqDir,
                    Fastq1=dragen_demux.read1,
                    Fastq2=dragen_demux.read2,
                    queue=Queue,
@@ -179,6 +181,7 @@ task dragen_demux {
 
 task prepare_samples {
      input {
+         String? PreviousFastqDir
          File SampleSheet
          String Fastq1
          String Fastq2
@@ -189,7 +192,7 @@ task prepare_samples {
      command <<<
          /bin/cp ~{Fastq1} 1.tmp.txt
          /bin/cp ~{Fastq2} 2.tmp.txt
-         /usr/bin/perl -e 'open(R1,"1.tmp.txt"); @r1 = <R1>; \
+         /usr/bin/perl -e 'use File::Basename; open(R1,"1.tmp.txt"); @r1 = <R1>; \
              chomp @r1; close R1;\
              open(R2,"2.tmp.txt"); @r2 = <R2>; \
              chomp @r2; close R2; \
@@ -200,6 +203,20 @@ task prepare_samples {
                  my $s = $l[1].'_';
                  my $r1 = (grep /$s/, @r1)[0];
                  my $r2 = (grep /$s/, @r2)[0];
+                 my $prev_dir = "~{PreviousFastqDir}";
+                 if ($prev_dir) {
+                     my ($n) = basename($r1) =~/^(\S+?)_/;
+                     my @p_r1 = glob($prev_dir."/$n"."*_R1_001.fastq.gz");
+                     my @p_r2 = glob($prev_dir."/$n"."*_R2_001.fastq.gz");
+                     unless (@p_r1 and @p_r1 == 1 and @p_r2 and @p_r2 == 1) {
+                         die "fail to get previous R1 and or R2 for $n";
+                     }
+                     my $rc1 = system "cat $p_r1[0] >> $r1";
+                     my $rc2 = system "cat $p_r2[0] >> $r2";
+                     unless ($rc1 == 0 and $rc2 == 0) {
+                         die "R1 and or R2 cat failed for $n";
+                     }
+                 }
                  print join("\t",@l,$r1,$r2),"\n";
              }
              close SS;' > sample_sheet.txt

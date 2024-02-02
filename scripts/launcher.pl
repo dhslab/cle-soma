@@ -71,7 +71,7 @@ for my $row ($sheet->rows()) {
         $acc =~ s/\s+//g;
         die "$acc not starting with G" unless $acc =~ /^G/;
         unless ($acc =~ /^G\-/) {
-            unless ($acc =~ /^G\d+\-\d+$/) {
+            unless ($acc =~ /^G\d+\-\d+(_\d+)?$/) {
                 die "$acc is not a valid accession number in $qc sheet";
             }
         }
