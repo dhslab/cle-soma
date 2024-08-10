@@ -19,8 +19,11 @@ workflow Soma {
         String OutputDir
         String Queue
         String JobGroup
+        String DragenMEM
         String DragenQueue
         String DragenDockerImage
+
+        Int DragenCPU
 
         String SomaRepo
         String CoverageBed  = SomaRepo + "/accessory_files/SOMA.all.bed"
@@ -30,9 +33,9 @@ workflow Soma {
         String CovLevels = "100,500,1000,1500"
     }
 
-    String DragenReference = "/storage1/fs1/gtac-mgi/Active/CLE/reference/dragen424_hg38"
-    String Reference       = "/storage1/fs1/duncavagee/Active/SEQ/Chromoseq/process/refdata/hg38/all_sequences.fa"
-    String ReferenceDict   = "/storage1/fs1/duncavagee/Active/SEQ/Chromoseq/process/refdata/hg38/all_sequences.dict"
+    String DragenReference = "/storage1/fs1/duncavagee/Active/SEQ/reference/dragen_hg38v4.3.6"
+    String Reference       = "/storage1/fs1/duncavagee/Active/SEQ/reference/hg38/sequence/hg38_mgi_patch.fa"
+    String ReferenceDict   = "/storage1/fs1/duncavagee/Active/SEQ/reference/hg38/sequence/hg38_mgi_patch.dict"
 
     String DemuxFastqDir = "/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/demux_fastq"
 
@@ -44,6 +47,8 @@ workflow Soma {
                    OutputDir=OutputDir,
                    DemuxFastqDir=DemuxFastqDir,
                    SampleSheet=DemuxSampleSheet,
+                   DragenCPU=DragenCPU,
+                   DragenMEM=DragenMEM,
                    DragenEnv=DragenEnv,
                    DragenDockerImage=DragenDockerImage,
                    queue=DragenQueue,
@@ -77,6 +82,8 @@ workflow Soma {
                    CovLevels=CovLevels,
                    OutputDir=OutputDir,
                    SubDir=samples[1] + '_' + samples[0],
+                   DragenCPU=DragenCPU,
+                   DragenMEM=DragenMEM,
                    DragenEnv=DragenEnv,
                    DragenDockerImage=DragenDockerImage,
                    queue=DragenQueue,
@@ -147,8 +154,10 @@ task dragen_demux {
          String OutputDir
          String DemuxFastqDir
          String DragenDockerImage
+         String DragenMEM
          String jobGroup
          String queue
+         Int DragenCPU
      }
 
      String LocalFastqDir   = "/staging/runs/Soma/demux_fastq/" + basename(OutputDir)
@@ -158,7 +167,7 @@ task dragen_demux {
 
      command <<<
          /bin/mkdir ~{LocalFastqDir} && \
-         /opt/edico/bin/dragen --bcl-conversion-only true --bcl-only-matched-reads true --strict-mode true --sample-sheet ~{SampleSheet} \
+         /opt/dragen/4.3.6/bin/dragen --bcl-conversion-only true --bcl-only-matched-reads true --strict-mode true --sample-sheet ~{SampleSheet} \
          --bcl-input-directory ~{Dir} --intermediate-results-dir ~{LocalFastqDir} --output-directory ~{OutputFastqDir} && \
          /bin/ls ~{OutputFastqDir}/*_R1_001.fastq.gz > Read1_list.txt && \
          /bin/ls ~{OutputFastqDir}/*_R2_001.fastq.gz > Read2_list.txt && \
@@ -167,8 +176,8 @@ task dragen_demux {
 
      runtime {
          docker_image: DragenDockerImage
-         cpu: "20"
-         memory: "200 G"
+         cpu: DragenCPU
+         memory: DragenMEM
          dragen_env: DragenEnv
          queue: queue
          job_group: jobGroup
@@ -249,10 +258,12 @@ task dragen_align {
          String OutputDir
          String SubDir
          String DragenDockerImage
+         String DragenMEM
          String jobGroup
          String queue
 
          String? DragenEnv
+         Int DragenCPU
          Int readfamilysize
      }
 
@@ -263,11 +274,11 @@ task dragen_align {
      command {
          /bin/mkdir -p ${LocalAlignDir} && \
          /bin/mkdir -p ${DragenOutdir}  && \
-         /opt/edico/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} \
+         /opt/dragen/4.3.6/bin/dragen -r ${DragenRef} --tumor-fastq1 ${fastq1} --tumor-fastq2 ${fastq2} --RGSM-tumor ${SM} --RGID-tumor ${RG} --RGLB-tumor ${LB} \
          --umi-enable true --umi-library-type=random-simplex --umi-min-supporting-reads ${readfamilysize} --umi-metrics-interval-file ${CoverageBed} \
          --enable-map-align true --enable-sort true --enable-map-align-output true --gc-metrics-enable=true \
          --enable-variant-caller=true --vc-target-bed ${CoverageBed} --vc-enable-umi-solid true --vc-enable-triallelic-filter false \
-         --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true \
+         --vc-combine-phased-variants-distance 3 --vc-enable-orientation-bias-filter true --vc-skip-germline-tagging true --vc-systematic-noise NONE \
          --qc-coverage-ignore-overlaps=true --qc-coverage-region-1 ${CoverageBed} --qc-coverage-reports-1 cov_report \
          --qc-coverage-region-1-thresholds ${CovLevels} \
          --intermediate-results-dir ${LocalAlignDir} --output-dir ${DragenOutdir} --output-file-prefix ${Name} --output-format CRAM
@@ -275,8 +286,8 @@ task dragen_align {
 
      runtime {
          docker_image: DragenDockerImage 
-         cpu: "20"
-         memory: "200 G"
+         cpu: DragenCPU
+         memory: DragenMEM
          dragen_env: DragenEnv
          queue: queue
          job_group: jobGroup
