@@ -9,8 +9,10 @@
     "Soma.DataTransfer":"true",
     "Soma.RmRunDir":"false",
     "Soma.JobGroup":"/cle/wdl/haloplex",
+    "Soma.DragenCPU":20,
+    "Soma.DragenMEM":"200 G",
     "Soma.DragenEnv":"LSF_DOCKER_DRAGEN=y",
-    "Soma.DragenDockerImage":"gtac-mgi-dragen(etycksen/dragen4:4.2.4)",
+    "Soma.DragenDockerImage":"gtac-mgi-dragen(apldx/oracle8-dragen-4.3.6)",
     "Soma.DragenQueue":"dragen-2",
     "Soma.Queue":"gtac-mgi"
 }
