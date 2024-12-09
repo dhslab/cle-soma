@@ -57,6 +57,7 @@ pct_target_1500 = []
 total_giga_bases= []
 
 for sample_name in sample_list:
+    sample_name = sample_name.replace(" ", "")
     search = os.path.join(out_dir, f"{sample_name}*")
     sample_dir = glob.glob(search)[0]
     if not os.path.isdir(sample_dir):
