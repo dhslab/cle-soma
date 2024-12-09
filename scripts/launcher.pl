@@ -104,7 +104,11 @@ for my $row ($sheet->rows()) {
     }
     my ($lane, $flowcell, $name, $index, $exception) = @$row;
 
-    $name =~ s/\s+//g;
+    $name     =~ s/\s+//g;
+    $lane     =~ s/\s+//g;
+    $index    =~ s/\s+//g;
+    $flowcell =~ s/\s+//g;
+
     if ($samples{$name}) {
         die "There are multiple $name in $ss sheet";
     }
