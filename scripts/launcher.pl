@@ -14,7 +14,7 @@ use warnings;
 
 umask 002;
 
-use lib "/storage1/fs1/duncavagee/Active/SEQ/Chromoseq/process/perl5/lib/perl5";
+use lib "/storage3/fs1/path-gmp-cgl/Active/mopath/Chromoseq/process/perl5/lib/perl5";
 use Spreadsheet::Read;
 use JSON qw(from_json to_json);
 use IO::File;
@@ -29,12 +29,12 @@ $sample_sheet = abs_path($sample_sheet);
 die "$rundir is not valid" unless -d $rundir;
 die "$sample_sheet is not valid" unless -s $sample_sheet;
 
-my $dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/batchdir';
-my $git_dir = '/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma';
+my $dir = '/storage3/fs1/path-gmp-cgl/Active/mopath/SOMA/batchdir';
+my $git_dir = '/storage3/fs1/path-gmp-cgl/Active/mopath/SOMA/process/git/cle-soma';
 
 my $conf = File::Spec->join($git_dir, 'application.conf');
 my $wdl  = File::Spec->join($git_dir, 'Soma.wdl');
-my $json_template = File::Spec->join($git_dir, 'Soma.json');
+my $json_template = File::Spec->join($git_dir, 'Soma_alt.json');
 
 my $group  = '/cle/wdl/tcp';
 my $queue  = 'gtac-mgi';

@@ -33,11 +33,11 @@ workflow Soma {
         String CovLevels = "100,500,1000,1500"
     }
 
-    String DragenReference = "/storage1/fs1/duncavagee/Active/SEQ/reference/dragen_hg38v4.3.6"
-    String Reference       = "/storage1/fs1/duncavagee/Active/SEQ/reference/hg38/sequence/hg38_mgi_patch.fa"
-    String ReferenceDict   = "/storage1/fs1/duncavagee/Active/SEQ/reference/hg38/sequence/hg38_mgi_patch.dict"
+    String DragenReference = "/storage3/fs1/path-gmp-cgl/Active/mopath/reference/dragen_hg38v4.3.6"
+    String Reference       = "/storage3/fs1/path-gmp-cgl/Active/mopath/reference/hg38/sequence/hg38_mgi_patch.fa"
+    String ReferenceDict   = "/storage3/fs1/path-gmp-cgl/Active/mopath/reference/hg38/sequence/hg38_mgi_patch.dict"
 
-    String DemuxFastqDir = "/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/demux_fastq"
+    String DemuxFastqDir = "/storage3/fs1/path-gmp-cgl/Active/mopath/SOMA/demux_fastq"
 
     Int readfamilysize  = 1
 
