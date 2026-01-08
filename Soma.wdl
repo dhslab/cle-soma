@@ -371,7 +371,7 @@ task batch_qc {
 
      command {
          if [ -n "$(/bin/ls -d ${BatchDir}/G*)" ]; then
-             /bin/chmod -R 666 ${BatchDir}/G*
+             /bin/chmod 666 ${BatchDir}/G*/*.txt
          fi
          if [ -n "${InputSpreadSheet}" ]; then
              /usr/bin/python3 ${QC_py} -s ${InputSpreadSheet} -d ${BatchDir}
