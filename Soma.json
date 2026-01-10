@@ -5,7 +5,7 @@
     "Soma.OutputDir":"",
     "Soma.IlluminaDir":"",
     "Soma.XferLabel":"",
-    "Soma.SomaRepo":"/storage1/fs1/gtac-mgi/Active/CLE/assay/SOMA/process/git/cle-soma",
+    "Soma.SomaRepo":"/storage3/fs1/path-gmp-cgl/Active/mopath/SOMA/process/git/cle-soma",
     "Soma.DataTransfer":"true",
     "Soma.RmRunDir":"false",
     "Soma.JobGroup":"/cle/wdl/haloplex",
