@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/dhslab/cle-soma/main/nextflow_schema.json",
+  "title": "dhslab/cle-soma pipeline parameters",
+  "description": "Nextflow conversion of SOMA WDL workflow",
+  "type": "object",
+  "definitions": {
+    "input_output": {
+      "title": "Input / Output",
+      "type": "object",
+      "required": [
+        "input",
+        "outdir"
+      ],
+      "properties": {
+        "input": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "description": "Path to SOMA sample sheet (tab-delimited)."
+        },
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Output directory for batch results."
+        },
+        "input_spreadsheet": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Optional spreadsheet for Genoox export and QC enrichment."
+        },
+        "demux_samplesheet": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Optional DRAGEN demultiplex samplesheet."
+        },
+        "illumina_rundir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Illumina run directory for demultiplexing."
+        },
+        "demux_outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Directory to write demultiplexed fastqs."
+        }
+      }
+    },
+    "workflow_options": {
+      "title": "Workflow Options",
+      "type": "object",
+      "properties": {
+        "data_transfer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Transfer fastq/QC files to S3 when enabled."
+        },
+        "rm_rundir": {
+          "type": "boolean",
+          "default": false,
+          "description": "Remove Illumina run directory after successful run."
+        },
+        "xfer_label": {
+          "type": "string",
+          "default": "soma_nextflow",
+          "description": "S3 destination suffix label."
+        }
+      }
+    },
+    "compute": {
+      "title": "Compute Options",
+      "type": "object",
+      "properties": {
+        "queue": {
+          "type": "string",
+          "default": "gtac-mgi"
+        },
+        "user_group": {
+          "type": "string",
+          "default": ""
+        },
+        "job_group_name": {
+          "type": "string",
+          "default": "/cle/wdl/haloplex"
+        }
+      }
+    },
+    "references": {
+      "title": "Reference Files",
+      "type": "object",
+      "properties": {
+        "dragen_reference": {
+          "type": "string",
+          "format": "directory-path"
+        },
+        "reference": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "reference_dict": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "coverage_bed": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "haplotect_bed": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "qc_script": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "cov_levels": {
+          "type": "string",
+          "default": "100,500,1000,1500"
+        },
+        "read_family_size": {
+          "type": "integer",
+          "default": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/input_output"
+    },
+    {
+      "$ref": "#/definitions/workflow_options"
+    },
+    {
+      "$ref": "#/definitions/compute"
+    },
+    {
+      "$ref": "#/definitions/references"
+    }
+  ]
+}
