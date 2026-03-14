@@ -104,15 +104,18 @@ workflow SOMA {
     ch_versions = ch_versions.mix(BATCH_QC.out.versions)
 
     if (params.data_transfer) {
+        ch_fastqs = ch_samples.map { meta, r1, r2 -> [r1, r2] }.flatten().collect()
         DATA_TRANSFER(
             BATCH_QC.out.qc_all,
+            BATCH_QC.out.qc_file.collect(),
+            ch_fastqs,
             params.input_spreadsheet ?: ""
         )
         ch_versions = ch_versions.mix(DATA_TRANSFER.out.versions)
     }
 
     if (params.demux_samplesheet && params.rm_rundir && params.illumina_rundir) {
-        REMOVE_RUNDIR(params.illumina_rundir)
+        REMOVE_RUNDIR(params.illumina_rundir, BATCH_QC.out.versions.collect())
         ch_versions = ch_versions.mix(REMOVE_RUNDIR.out.versions)
     }
 

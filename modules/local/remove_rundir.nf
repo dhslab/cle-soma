@@ -4,6 +4,7 @@ process REMOVE_RUNDIR {
 
     input:
     val(rundir)
+    val(trigger)
 
     output:
     path('versions.yml'), emit: versions

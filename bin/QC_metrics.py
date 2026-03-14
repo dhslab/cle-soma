@@ -59,18 +59,28 @@ total_giga_bases= []
 for sample_name in sample_list:
     sample_name = sample_name.replace(" ", "")
     search = os.path.join(out_dir, f"{sample_name}*")
-    sample_dir = glob.glob(search)[0]
+    matches = glob.glob(search)
+    if not matches:
+        print(f"Warning: No directory found for sample {sample_name} at {search}. Skipping.", file=sys.stderr)
+        continue
+    sample_dir = matches[0]
     if not os.path.isdir(sample_dir):
-        sys.exit(sample_dir + " is not a valid sample directory")
+        print(f"Warning: {sample_dir} is not a valid sample directory. Skipping.", file=sys.stderr)
+        continue
 
     dragen_dir = os.path.join(sample_dir, "dragen")
-    mapping_metrics = glob.glob(os.path.join(dragen_dir, "*.mapping_metrics.csv"))[0]
-    target_metrics = glob.glob(os.path.join(dragen_dir, "*.target_bed_coverage_metrics.csv"))[0]
-    umi_metrics = glob.glob(os.path.join(dragen_dir, "*.umi_metrics.csv"))[0]
+    mapping_metrics_list = glob.glob(os.path.join(dragen_dir, "*.mapping_metrics.csv"))
+    target_metrics_list = glob.glob(os.path.join(dragen_dir, "*.target_bed_coverage_metrics.csv"))
+    umi_metrics_list = glob.glob(os.path.join(dragen_dir, "*.umi_metrics.csv"))
     haplotect_out = os.path.join(sample_dir, f"{sample_name}.haplotect.txt")
 
-    if not (os.path.isfile(mapping_metrics) and os.path.isfile(target_metrics) and os.path.isfile(umi_metrics) and os.path.isfile(haplotect_out)):
-        sys.exit(f"No dragen mapping and/or target metrics and/or umi metrics and/or haplotect out for {sample_dir}")
+    if not (mapping_metrics_list and target_metrics_list and umi_metrics_list and os.path.isfile(haplotect_out)):
+        print(f"Warning: Missing dragen metrics or haplotect output for {sample_dir}. Skipping.", file=sys.stderr)
+        continue
+    
+    mapping_metrics = mapping_metrics_list[0]
+    target_metrics = target_metrics_list[0]
+    umi_metrics = umi_metrics_list[0]
 
     with open(haplotect_out, "r") as haplotect_file:
         lines = haplotect_file.readlines()
@@ -176,4 +186,4 @@ if in_ss:
     in_df.to_excel (writer, sheet_name='QC Metrics - qPCR', index=False)
     sss_df.to_excel(writer, sheet_name='Single Sample Stats', index=False, float_format="%.2f")
     fcs_df.to_excel(writer, sheet_name='Final Coverage Stats - TCP', index=False, float_format="%.2f")
-    writer.save()
+    writer.close()
