@@ -88,7 +88,7 @@ for sample_name in sample_list:
             if "MAPPING/ALIGNING PER RG" in line:
                 break
             if "Total input reads" in line:
-                total_reads.append(int(line[3]))
+                total_reads.append(float(round(int(line[3])/1000000, 2)))
             elif "Mapped reads" in line:
                 pct_map_reads.append(float(line[4]))
             elif "Total bases" in line:
@@ -132,22 +132,22 @@ for sample_name in sample_list:
         pct_umi_dup.append(float(round(100 - (num_of_cons * 2)/num_of_reads * 100, 2)))
 
 qc_df = pd.DataFrame({
-    "HAPLOTECT_SCORE"           : hap_scores, 
-    "HAPLOTECT_SITES"           : hap_sites,
-    "TOTAL_GIGA_BASES"          : total_giga_bases,
-    "TOTAL_READS"               : total_reads,
-    "PCT_MAPPED_READS"          : pct_map_reads,
-    "MISMATCH_RATE_1"           : error_rate_1,
-    "MISMATCH_RATE_2"           : error_rate_2,
-    "PCT_Q30_BASES_1"           : pct_q30_1,
-    "PCT_Q30_BASES_2"           : pct_q30_2,
-    "MEAN_INSERT_SIZE"          : min_ins_size,
-    "PCT_UMI_DUPLICATE_READS"   : pct_umi_dup,
-    "AVG_ALIGN_TARGET_COVERAGE" : avg_align_cov,
-    "PCT_TARGET_ALIGNED_READS"  : pct_align_reads,
-    "PCT_TARGET_20x"            : pct_target_20,
-    "PCT_TARGET_100x"           : pct_target_100,
-    "PCT_TARGET_1500x"          : pct_target_1500
+    "HAPLOTECT: contamination_fraction"                                 : hap_scores,
+    "HAPLOTECT: informative_snppairs"                                   : hap_sites,
+    "MAPPING/ALIGNING SUMMARY: Total bases (G)"                         : total_giga_bases,
+    "MAPPING/ALIGNING SUMMARY: Total input reads (M)"                   : total_reads,
+    "MAPPING/ALIGNING SUMMARY: Mapped reads (%)"                        : pct_map_reads,
+    "MAPPING/ALIGNING SUMMARY: Mismatched bases R1 (%)"                 : error_rate_1,
+    "MAPPING/ALIGNING SUMMARY: Mismatched bases R2 (%)"                 : error_rate_2,
+    "MAPPING/ALIGNING SUMMARY: Q30 bases R1 (%)"                        : pct_q30_1,
+    "MAPPING/ALIGNING SUMMARY: Q30 bases R2 (%)"                        : pct_q30_2,
+    "MAPPING/ALIGNING SUMMARY: Insert length: mean"                     : min_ins_size,
+    "UMI STATISTICS: Duplicate reads (%)"                               : pct_umi_dup,
+    "COVERAGE SUMMARY: Average alignment coverage over target region"   : avg_align_cov,
+    "COVERAGE SUMMARY: Aligned reads in target region (%)"              : pct_align_reads,
+    "COVERAGE SUMMARY: PCT of target region with coverage [  20x: inf)" : pct_target_20,
+    "COVERAGE SUMMARY: PCT of target region with coverage [ 100x: inf)" : pct_target_100,
+    "COVERAGE SUMMARY: PCT of target region with coverage [1500x: inf)" : pct_target_1500
 })
 
 out_file1 = os.path.join(out_dir, batch_name + "_QC.xlsx")
