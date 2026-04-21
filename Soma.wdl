@@ -370,8 +370,11 @@ task batch_qc {
      String batch = basename(BatchDir)
 
      command {
-         if [ -n "$(/bin/ls -d ${BatchDir}/G*)" ]; then
+         if [ -n "$(/bin/ls -d ${BatchDir}/G* 2>/dev/null)" ]; then
              /bin/chmod 666 ${BatchDir}/G*/*.txt
+         fi
+         if [ -n "$(/bin/ls -d ${BatchDir}/*WCN* 2>/dev/null)" ]; then
+             /bin/chmod 666 ${BatchDir}/*WCN*/*.txt
          fi
          if [ -n "${InputSpreadSheet}" ]; then
              /usr/bin/python3 ${QC_py} -s ${InputSpreadSheet} -d ${BatchDir}
