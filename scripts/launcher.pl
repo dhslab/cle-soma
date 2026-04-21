@@ -69,9 +69,9 @@ for my $row ($sheet->rows()) {
     else {
         my $acc = $row->[0];
         $acc =~ s/\s+//g;
-        die "$acc not starting with G" unless $acc =~ /^G/;
-        unless ($acc =~ /^G\-/) {
-            unless ($acc =~ /^G\d+\-\d+(_\d+)?$/) {
+        die "$acc not containing WCN or starting with G" unless $acc =~ /^G/ or $acc =~ /WCN/;
+        unless ($acc =~ /^G\-/) { #G- is control sample
+            unless ($acc =~ /^G\d+\-\d+(_\d+)?$/ or $acc =~ /^2[6-9]WCN\-[0-3]\d{2}CN\d{3}$/) {
                 die "$acc is not a valid accession number in $qc sheet";
             }
         }
